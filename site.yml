@@ -1,6 +1,6 @@
 ---
 - name: Deploy on vSphere ESXi
-  hosts: all
+  hosts: esxi
   # connection: local
   # user: remote
   # sudo: true

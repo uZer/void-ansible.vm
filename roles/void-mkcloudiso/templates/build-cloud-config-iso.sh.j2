@@ -28,7 +28,7 @@ CONFIGURATION:
     Output ISO:         ./<hostname>-config.iso
 
 EOF
-    exit 0
+    exit 6
 }
 
 ## CHECK VALIDITY OF CLOUD-CONFIG FILE $1
@@ -39,6 +39,11 @@ validate_cloudconfig()
                 --data-binary "$file" \
                 --cacert $CA_CERT_FILE 2>/dev/null)
     echo $response | jq 'select(.result != null)'
+    size=$(echo $response | jq 'select(.result != null)' | wc -c)
+    if [ ! $size == "0" ]; then
+        echo "    ERROR: Wrong cloud-config format"
+        exit 5
+    fi
 }
 
 ## CHECK IF BINARY IS INSTALLED IN PATH
@@ -46,7 +51,7 @@ check_requirements()
 {
     if ! which $1 > /dev/null 2>&1; then
         echo "    ERROR: $1 does not exists on your system"
-        exit 1
+        exit 4
     fi
     return
 }
@@ -58,8 +63,6 @@ cleanup_tmp()
     mkdir -p $1/openstack/latest
     return
 }
-
-
 
 ## REQUIREMENTS
 cd "$(dirname "$0")"
@@ -81,29 +84,23 @@ echo "[+] Checking cloud-config presence..."
 if [ ! -f ${CORE_OS_HOSTNAME}/${CLOUD_CONFIG_FILE} ]; then
     echo "    ERROR: The cloud-config file doesn't exist."
     echo "    Expected file is ${CORE_OS_HOSTNAME}/${CLOUD_CONFIG_FILE}"
-    exit 2
+    exit 3
 fi
 echo "[+] Online validation of cloud-config file..."
+
 validate_cloudconfig "$CORE_OS_HOSTNAME/$CLOUD_CONFIG_FILE"
 
 ## BUILD
-echo ""
-read -r -p "Continue building ? [y/N]" response
-case $response in
-    [yY][eE][sS]|[yY])
-        ## BUILD
-        echo "Build Cloud Config Settings ..."
-        cp ${CORE_OS_HOSTNAME}/${CLOUD_CONFIG_FILE} \
-                ${TMP_CLOUD_CONFIG_DIR}/openstack/latest/user_data
-        echo "Creating Cloud Config ISO ..."
-        mkisofs -R -V config-2 -o ${CLOUD_CONFIG_ISO} ${TMP_CLOUD_CONFIG_DIR}
-        rm -rf ${TMP_CLOUD_CONFIG_DIR} > /dev/null 2>&1;
-        exit 0
-        ;;
-    *)
-        exit 1
-        ;;
-esac
+echo "[+] Building cloud-config settings ..."
+cp ${CORE_OS_HOSTNAME}/${CLOUD_CONFIG_FILE} \
+        ${TMP_CLOUD_CONFIG_DIR}/openstack/latest/user_data
+echo "[+] Creating cloud config ISO ..."
+mkisofs -input-charset utf-8 -R -V config-2 \
+        -o ${CLOUD_CONFIG_ISO} ${TMP_CLOUD_CONFIG_DIR}
+rm -rf ${TMP_CLOUD_CONFIG_DIR} > /dev/null 2>&1;
 
+## UPLOAD
+echo "[+] Uploading to {{ inventory_hostname }}..."
+scp ${CLOUD_CONFIG_ISO} {{ inventory_hostname }}:{{ esxi_iso_dir }}/${CLOUD_CONFIG_ISO}
 
-
+exit 0
