@@ -1,0 +1,9 @@
+---
+domain: void
+build_directory: ~/{{ domain }}-infrastructure
+guests: []
+nameserver: 8.8.8.8
+#guests:
+#  - hostname: coreos01
+#    owner: ypi
+# vim:ft=ansible:

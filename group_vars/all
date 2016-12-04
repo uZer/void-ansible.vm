@@ -1,0 +1,3 @@
+domain: void
+build_directory: "~/{{ domain }}-infrastructure"
+nameserver: 10.10.10.2

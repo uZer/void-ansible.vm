@@ -1,0 +1,8 @@
+---
+- name: Deploy on vSphere ESXi
+  hosts: all
+  # connection: local
+  # user: remote
+  # sudo: true
+  roles:
+    - void-mkcloudiso

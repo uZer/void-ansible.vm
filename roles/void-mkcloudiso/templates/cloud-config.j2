@@ -1,0 +1,39 @@
+#cloud-config
+    hostname: "{{ item.hostname }}.{{ domain }}"
+    coreos:
+        etcd2:
+            discovery: {{ vault_etcd2_clusters[item.cluster].url }}
+            advertise-client-urls: http://$private_ipv4:2379,http://$private_ipv4:4001
+            initial-advertise-peer-urls: http://$private_ipv4:2380
+            listen-client-urls: http://0.0.0.0:2379,http://0.0.0.0:4001
+            listen-peer-urls: http://$private_ipv4:2380
+        units:
+            - name: "etcd2.service"
+              command: "start"
+            - name: "fleet.service"
+              command: "start"
+        update:
+            reboot-strategy: "etcd-lock"
+        locksmith:
+            window-start: Mon 03:00
+            window-length: 2h
+        fleet:
+            public-ip: "$public_ipv4"
+            metadata: "region=rbx"
+    users:
+        - name: "ypiolet"
+          groups:
+              - "sudo"
+              - "docker"
+          ssh-authorized-keys:
+              - "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDc8d0+FQEGbnRuFdcHwlPVKbOHOnbDgT2/pkNsVJqzs5TqtkS8LnNqj3qAiux4MFKDNsyrZscb/ndbrVs1jYcCADzELS1PD+9dJDi4KqOiY9xVdVtUnCT+8he2utfJFIRrMoa4f4jN7Q9YLWX9zWLgOFZnbvIFKXy+R52KFtzMcNd2CRO/7WtqOLzVGh1PEjvFTWuQUNx3+C+I8F9FRN206SMOVWhQKwBkjGTop7j1H19Etw0Ivyx2Cgr0ho7mqGFoUQbIQ2xRkDoS7/G17JDZDp30BTLhMLlvRCdw2wbPh5qJssgzO6IsyV2eUXJh0SMQncGzcUj7/0eyKFKtcyS7 ypiolet@thevault.void"
+    write_files:
+        - path: "/etc/resolv.conf"
+          permissions: "0644"
+          owner: "root"
+          content: |
+            # Provisioned by cloud-config
+            domain {{ domain }}
+            nameserver {{ nameserver }}
+
+

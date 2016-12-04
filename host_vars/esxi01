@@ -1,0 +1,12 @@
+guests:
+  - hostname: coreos01
+    cluster: front
+    owner: ypi
+
+  - hostname: coreos02
+    cluster: front
+    owner: ypi
+
+  - hostname: coreos03
+    cluster: front
+    owner: ypi

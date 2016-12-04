@@ -1,0 +1,109 @@
+#!/bin/sh
+# {{ ansible_managed }}
+# Make Cloud ISO from cloud-config
+set -euo pipefail
+IFS=$'\n\t'
+
+TMP_CLOUD_CONFIG_DIR='/tmp/.cloudbuild'
+CLOUD_CONFIG_FILE=cloud-config
+CA_CERT_FILE='rapidssl-ca.crt'
+VALIDATION_URL='https://validate.core-os.net/validate'
+
+################################################################################
+## USAGE
+display_help()
+{
+    cat <<EOF
+Creates a cloud iso from a cloud-config file.
+
+USAGE:
+    $0 <hostname>
+
+ACTIONS:
+    -h Display this message
+
+CONFIGURATION:
+    TMP Directory:      $TMP_CLOUD_CONFIG_DIR
+    Cloud-config file:  ./<hostname>/$CLOUD_CONFIG_FILE
+    Output ISO:         ./<hostname>-config.iso
+
+EOF
+    exit 0
+}
+
+## CHECK VALIDITY OF CLOUD-CONFIG FILE $1
+validate_cloudconfig()
+{
+    file=$(cat $1)
+    response=$(curl $VALIDATION_URL -X PUT \
+                --data-binary "$file" \
+                --cacert $CA_CERT_FILE 2>/dev/null)
+    echo $response | jq 'select(.result != null)'
+}
+
+## CHECK IF BINARY IS INSTALLED IN PATH
+check_requirements()
+{
+    if ! which $1 > /dev/null 2>&1; then
+        echo "    ERROR: $1 does not exists on your system"
+        exit 1
+    fi
+    return
+}
+
+## CLEANUP PREVIOUS FILES
+cleanup_tmp()
+{
+    rm -rf $1 > /dev/null 2>&1;
+    mkdir -p $1/openstack/latest
+    return
+}
+
+
+
+## REQUIREMENTS
+cd "$(dirname "$0")"
+if [ $# -ne 1 ]; then
+    echo "$0: Invalid number of arguments."
+    echo ""
+    display_help
+    exit 2
+fi
+CORE_OS_HOSTNAME=${1}
+CLOUD_CONFIG_ISO=${CORE_OS_HOSTNAME}-config.iso
+
+echo "[+] Checking system requirements..."
+check_requirements mkisofs
+check_requirements jq
+echo "[+] Cleaning up previous directories..."
+cleanup_tmp ${TMP_CLOUD_CONFIG_DIR}
+echo "[+] Checking cloud-config presence..."
+if [ ! -f ${CORE_OS_HOSTNAME}/${CLOUD_CONFIG_FILE} ]; then
+    echo "    ERROR: The cloud-config file doesn't exist."
+    echo "    Expected file is ${CORE_OS_HOSTNAME}/${CLOUD_CONFIG_FILE}"
+    exit 2
+fi
+echo "[+] Online validation of cloud-config file..."
+validate_cloudconfig "$CORE_OS_HOSTNAME/$CLOUD_CONFIG_FILE"
+
+## BUILD
+echo ""
+read -r -p "Continue building ? [y/N]" response
+case $response in
+    [yY][eE][sS]|[yY])
+        ## BUILD
+        echo "Build Cloud Config Settings ..."
+        cp ${CORE_OS_HOSTNAME}/${CLOUD_CONFIG_FILE} \
+                ${TMP_CLOUD_CONFIG_DIR}/openstack/latest/user_data
+        echo "Creating Cloud Config ISO ..."
+        mkisofs -R -V config-2 -o ${CLOUD_CONFIG_ISO} ${TMP_CLOUD_CONFIG_DIR}
+        rm -rf ${TMP_CLOUD_CONFIG_DIR} > /dev/null 2>&1;
+        exit 0
+        ;;
+    *)
+        exit 1
+        ;;
+esac
+
+
+
