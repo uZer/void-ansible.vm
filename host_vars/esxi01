@@ -1,12 +1,21 @@
+host_region: rbx
 guests:
   - hostname: coreos01
     cluster: front
-    owner: ypi
+    owner: ypiolet
 
   - hostname: coreos02
     cluster: front
-    owner: ypi
+    owner: ypiolet
 
   - hostname: coreos03
     cluster: front
-    owner: ypi
+    owner: ypiolet
+    #    extra_users:
+    #      - name: ypiolet
+    #        keys:
+    #          - "..."
+    #        groups:
+    #          - sudo
+    #          - docker
+

@@ -1,0 +1,9 @@
+global_users:
+  ypiolet:
+    id: ypi
+    sshkeys:
+      - "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDc8d0+FQEGbnRuFdcHwlPVKbOHOnbDgT2/pkNsVJqzs5TqtkS8LnNqj3qAiux4MFKDNsyrZscb/ndbrVs1jYcCADzELS1PD+9dJDi4KqOiY9xVdVtUnCT+8he2utfJFIRrMoa4f4jN7Q9YLWX9zWLgOFZnbvIFKXy+R52KFtzMcNd2CRO/7WtqOLzVGh1PEjvFTWuQUNx3+C+I8F9FRN206SMOVWhQKwBkjGTop7j1H19Etw0Ivyx2Cgr0ho7mqGFoUQbIQ2xRkDoS7/G17JDZDp30BTLhMLlvRCdw2wbPh5qJssgzO6IsyV2eUXJh0SMQncGzcUj7/0eyKFKtcyS7 ypiolet@thevault.void"
+  flan:
+    id: flan
+  charles:
+    id: cha

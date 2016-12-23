@@ -1,10 +1,11 @@
 ---
+- include_vars: users.yml
 - include_vars: vault.yml
 
 - name: Ensure building structure exists
   local_action: >
     file
-    dest="{{ build_directory }}/{{ item.owner }}-{{ item.hostname }}"
+    dest="{{ build_directory }}/{{ global_users[item.owner].id }}-{{ item.hostname }}"
     state=directory
   with_items:
     - "{{ guests }}"
@@ -28,14 +29,14 @@
   local_action: >
     template
     src=cloud-config.j2
-    dest="{{ build_directory }}/{{ item.owner }}-{{ item.hostname }}/cloud-config"
+    dest="{{ build_directory }}/{{ global_users[item.owner].id }}-{{ item.hostname }}/cloud-config"
   with_items:
     - "{{ guests }}"
 
 - name: Run setup script to build cloud-config isos
   local_action: >
     shell
-    {{ build_directory }}/build-cloud-config-iso.sh {{ item.owner }}-{{ item.hostname }}
+    {{ build_directory }}/build-cloud-config-iso.sh {{ global_users[item.owner].id }}-{{ item.hostname }}
   with_items:
     - "{{ guests }}"
 # vim:ft=ansible:

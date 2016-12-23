@@ -10,23 +10,41 @@
         units:
             - name: "etcd2.service"
               command: "start"
-            - name: "fleet.service"
-              command: "start"
+#            - name: "fleet.service"
+#              command: "start"
         update:
-            reboot-strategy: "etcd-lock"
+            reboot-strategy: "{{ vault_etcd2_clusters[item.cluster].strat|default('etcd-lock') }}"
         locksmith:
-            window-start: Mon 03:00
-            window-length: 2h
+            window-start: {{ vault_etcd2_clusters[item.cluster].restart|default('Mon 03:00') }}
+            window-length: {{ vault_etcd2_clusters[item.cluster].window|default('2H') }}
         fleet:
             public-ip: "$public_ipv4"
-            metadata: "region=rbx"
+            metadata: "region={{ host_region }}"
     users:
-        - name: "ypiolet"
-          groups:
-              - "sudo"
-              - "docker"
+        - name: "{{ item.owner }}"
+{% if global_users[item.owner].sshkeys is defined %}
           ssh-authorized-keys:
-              - "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDc8d0+FQEGbnRuFdcHwlPVKbOHOnbDgT2/pkNsVJqzs5TqtkS8LnNqj3qAiux4MFKDNsyrZscb/ndbrVs1jYcCADzELS1PD+9dJDi4KqOiY9xVdVtUnCT+8he2utfJFIRrMoa4f4jN7Q9YLWX9zWLgOFZnbvIFKXy+R52KFtzMcNd2CRO/7WtqOLzVGh1PEjvFTWuQUNx3+C+I8F9FRN206SMOVWhQKwBkjGTop7j1H19Etw0Ivyx2Cgr0ho7mqGFoUQbIQ2xRkDoS7/G17JDZDp30BTLhMLlvRCdw2wbPh5qJssgzO6IsyV2eUXJh0SMQncGzcUj7/0eyKFKtcyS7 ypiolet@thevault.void"
+{% for i in global_users[item.owner].sshkeys %}
+          - {{ i }}
+{% endfor %}
+{% endif %}
+          groups:
+            - sudo
+{% if item.extra_users is defined %}{% for user in item.extra_users %}
+        - name: {{ user.name }}
+{% if user.groups is defined %}
+          groups:
+{% for group in user.groups %}
+              - {{ group }}
+{% endfor %}
+{% endif %}
+{% if user.sshkeys is defined %}
+          ssh-authorized-keys:
+{% for sshkey in user.sshkeys %}
+              - {{ sshkey }}
+{% endfor %}
+{% endif %}
+{% endfor %}{% endif %}
     write_files:
         - path: "/etc/resolv.conf"
           permissions: "0644"
@@ -34,6 +52,6 @@
           content: |
             # Provisioned by cloud-config
             domain {{ domain }}
-            nameserver {{ nameserver }}
-
-
+{% for s in nameservers %}
+            nameserver {{ s }}
+{% endfor %}
