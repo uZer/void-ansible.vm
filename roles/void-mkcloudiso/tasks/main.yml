@@ -2,34 +2,40 @@
 - include_vars: vault.yml
 
 - name: Ensure building structure exists
-  file: >
+  local_action: >
+    file
     dest="{{ build_directory }}/{{ item.owner }}-{{ item.hostname }}"
     state=directory
   with_items:
     - "{{ guests }}"
 
 - name: Deploy files
-  copy:
+  local_action: >
+    copy
     src="files/{{ item }}"
     dest="{{ build_directory }}/{{ item }}"
   with_items:
     - "rapidssl-ca.crt"
 
 - name: Deploy Setup Script
-  template: >
+  local_action: >
+    template
     src=build-cloud-config-iso.sh.j2
     dest="{{ build_directory }}/build-cloud-config-iso.sh"
     mode="0700"
 
 - name: Deploy cloud-config templates
-  template: >
+  local_action: >
+    template
     src=cloud-config.j2
     dest="{{ build_directory }}/{{ item.owner }}-{{ item.hostname }}/cloud-config"
   with_items:
     - "{{ guests }}"
 
 - name: Run setup script to build cloud-config isos
-  shell: "{{ build_directory }}/build-cloud-config-iso.sh {{ item.owner }}-{{ item.hostname }}"
+  local_action: >
+    shell
+    {{ build_directory }}/build-cloud-config-iso.sh {{ item.owner }}-{{ item.hostname }}
   with_items:
     - "{{ guests }}"
 # vim:ft=ansible:
