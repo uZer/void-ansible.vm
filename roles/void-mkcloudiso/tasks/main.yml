@@ -34,9 +34,25 @@
     - "{{ guests }}"
 
 - name: Run setup script to build cloud-config isos
+  ignore_errors: yes
   local_action: >
     shell
     {{ build_directory }}/build-cloud-config-iso.sh {{ global_users[item.owner].id }}-{{ item.hostname }}
   with_items:
     - "{{ guests }}"
+
+## FIXME: Currently included in build script
+#- name: Upload to vsphere
+#  local_action: vsphere_copy
+#  args:
+#    host: "{{ inventory_hostname }}"
+#    login: "{{ vault_esxi_username }}"
+#    password: "{{ vault_esxi_password }}"
+#    src: "{{ build_directory }}/{{ global_users[item.owner].id }}-{{ item.hostname }}-config.iso"
+#    dest: "{{ global_users[item.owner].id }}-{{ item.hostname }}/{{ global_users[item.owner].id }}-{{ item.hostname }}-config.iso"
+#    datacenter: "ha-datacenter"
+#    datastore: "{{ vm_datastore }}"
+#  with_items:
+#    - "{{ guests }}"
+
 # vim:ft=ansible:

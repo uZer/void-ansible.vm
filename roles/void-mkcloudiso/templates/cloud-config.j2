@@ -1,5 +1,5 @@
 #cloud-config
-    hostname: "{{ item.hostname }}.{{ domain }}"
+    hostname: "{{ item.hostname }}"
     coreos:
         etcd2:
             discovery: {{ vault_etcd2_clusters[item.cluster].url }}
@@ -17,9 +17,12 @@
         locksmith:
             window-start: {{ vault_etcd2_clusters[item.cluster].restart|default('Mon 03:00') }}
             window-length: {{ vault_etcd2_clusters[item.cluster].window|default('2H') }}
-        fleet:
-            public-ip: "$public_ipv4"
-            metadata: "region={{ host_region }}"
+#        fleet:
+#            public-ip: "$private_ipv4"
+#            metadata: "role={{ item.role|default('minion') }}"
+#        flannel:
+#            ip_masq: true
+#            interface: eth2
     users:
         - name: "{{ item.owner }}"
 {% if global_users[item.owner].sshkeys is defined %}

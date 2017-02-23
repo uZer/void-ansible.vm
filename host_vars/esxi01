@@ -1,16 +1,64 @@
 host_region: rbx
+vm_datastore: datastore1
+vm_diskmode: thick
+
 guests:
-  - hostname: coreos01
+  - hostname: coreos01.void
+    os: coreos
     cluster: front
     owner: ypiolet
+    role: master
+    interfaces:
+      - name: 'eno1*'
+        vlan: v10_mgmt
+        addresses:
+          - '10.10.10.100/24'
+        routes: []
+      - name: 'eno2*'
+        vlan: v20_front
+        addresses:
+          - '10.10.20.100/24'
+        routes:
+          - network: '0.0.0.0/0'
+            gateway: '10.10.20.254'
 
-  - hostname: coreos02
+  - hostname: coreos02.void
+    os: coreos
     cluster: front
     owner: ypiolet
+    role: minion
+    interfaces:
+      - name: 'eno1*'
+        vlan: v10_mgmt
+        addresses:
+          - '10.10.10.101/24'
+        routes: []
+      - name: 'eno2*'
+        vlan: v20_front
+        addresses:
+          - '10.10.20.101/24'
+        routes:
+          - network: '0.0.0.0/0'
+            gateway: '10.10.20.254'
 
-  - hostname: coreos03
+  - hostname: coreos03.void
+    os: coreos
     cluster: front
     owner: ypiolet
+    role: minion
+    interfaces:
+      - name: 'eno1*'
+        vlan: v10_mgmt
+        addresses:
+          - '10.10.10.101/24'
+        routes: []
+      - name: 'eno2*'
+        vlan: v20_front
+        addresses:
+          - '10.10.20.101/24'
+        routes:
+          - network: '0.0.0.0/0'
+            gateway: '10.10.20.254'
     #    extra_users:
     #      - name: ypiolet
     #        keys:

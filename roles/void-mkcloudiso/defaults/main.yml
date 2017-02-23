@@ -4,6 +4,7 @@ build_directory: ~/{{ domain }}-infrastructure
 esxi_iso_dir: /vmfs/volumes/datastore1/ISO
 guests: []
 nameserver: 8.8.8.8
+
 #guests:
 #  - hostname: coreos01
 #    owner: ypi

@@ -1,0 +1,68 @@
+---
+- include_vars: "users.yml"
+- include_vars: "vault.yml"
+
+- name: OVF Tool create VM if needed
+  when: item.os == 'coreos'
+  raw: >
+    if [ ! -d /vmfs/volumes/{{ vm_datastore }}/{{ global_users[item.owner].id }}-{{ item.hostname }} ] ; then /vmfs/volumes/datastore1/vmware-ovftool/ovftool -dm={{ vm_diskmode }} -ds={{ vm_datastore }} "--net:VM Network={{ item.interfaces[0].vlan }}" -n={{ global_users[item.owner].id }}-{{ item.hostname }} 'https://stable.release.core-os.net/amd64-usr/current/coreos_production_vmware_ova.ova' 'vi://{{ vault_esxi_username }}:{{ vault_esxi_password }}@localhost' ; fi
+  with_items:
+    - "{{ guests }}"
+
+- name: Edit VM
+  when: item.os == 'coreos'
+  local_action: vsphere_guest
+  args:
+    guest: "{{ global_users[item.owner].id }}-{{ item.hostname }}"
+    username: "{{ vault_esxi_username }}"
+    password: "{{ vault_esxi_password }}"
+    vmware_guest_facts: yes
+    vcenter_hostname: "{{ inventory_hostname }}"
+    esxi:
+      datacenter: "ha-datacenter"
+      hostname: "{{ inventory_hostname }}"
+  with_items:
+    - "{{ guests }}"
+
+# FIXME: Add more flexibility on network managements with_dict/...
+- name: Edit VM
+  when: item.os == 'coreos'
+  local_action: vsphere_guest
+  args:
+    guest: "{{ global_users[item.owner].id }}-{{ item.hostname }}"
+    username: "{{ vault_esxi_username }}"
+    password: "{{ vault_esxi_password }}"
+    state: reconfigured
+    vcenter_hostname: "{{ inventory_hostname }}"
+    vm_extra_config:
+      guestinfo.interface.0.role: "private"
+      guestinfo.interface.1.role: "public"
+      guestinfo.interface.0.name: "{{ item.interfaces[0].name }}"
+      guestinfo.interface.1.name: "{{ item.interfaces[1].name }}"
+      guestinfo.interface.0.dhcp: "no"
+      guestinfo.interface.1.dhcp: "no"
+      guestinfo.interface.0.ip.0.address: "{{ item.interfaces[0].addresses[0] }}"
+      guestinfo.interface.1.ip.0.address: "{{ item.interfaces[1].addresses[0] }}"
+      guestinfo.interface.1.route.0.destination: "{{ item.interfaces[1].routes[0].network }}"
+      guestinfo.interface.1.route.0.gateway: "{{ item.interfaces[1].routes[0].gateway }}"
+      guestinfo.hostname: "{{ item.hostname }}"
+      guestinfo.dns.server.0: "{{ nameservers[0] }}"
+      ide1\:0.deviceType: "cdrom-image"
+      ide1\:0.fileName: "/vmfs/volumes/{{ vm_datastore }}/ISO/ypi-coreos01.void-config.iso"
+      ide1\:0.present: "TRUE"
+
+    vm_nic:
+      nic1:
+        type: VirtualVmxnet3
+        network: "{{ item.interfaces[0].vlan }}"
+        network_type: standard
+      nic2:
+        type: VirtualVmxnet3
+        network: "{{ item.interfaces[1].vlan }}"
+        network_type: standard
+    esxi:
+      datacenter: "ha-datacenter"
+      hostname: "{{ inventory_hostname }}"
+  with_items:
+    - "{{ guests }}"
+# vim:ft=ansible:
